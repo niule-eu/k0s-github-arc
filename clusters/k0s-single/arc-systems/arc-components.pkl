@@ -47,11 +47,13 @@ arc_operator_helm_release {
     namespace = arc_operator_namespace
     labels = arc_operator_labels
   }
-  interval = "10m"
-  chartRef {
-    kind = "OCIRepository"
-    name = arc_operator_helm_chart_name
-    namespace = "flux-system"
+  spec {
+    interval = "10m"
+    chartRef {
+      kind = "OCIRepository"
+      name = arc_operator_helm_chart_name
+      namespace = "flux-system"
+  }
   }
 }
 

@@ -38,8 +38,9 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/managed-by: helm
     app.kubernetes.io/version: 0.13.0
-interval: 10m
-chartRef:
-  kind: OCIRepository
-  name: gha-runner-scale-set-controller
-  namespace: flux-system
+spec:
+  interval: 10m
+  chartRef:
+    kind: OCIRepository
+    name: gha-runner-scale-set-controller
+    namespace: flux-system
