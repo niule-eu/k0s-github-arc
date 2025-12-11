@@ -29,13 +29,12 @@ arc_operator_helm_repo {
     namespace = "flux-system"
     labels = arc_operator_labels
   }
-  name = arc_operator_helm_chart_name
   spec {
     interval = "5m"
-  }
-  url = "oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller"
-  ref {
-    semver = "0.13.0"
+    url = "oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller"
+    ref {
+      semver = "0.13.0"
+    }
   }
 }
 

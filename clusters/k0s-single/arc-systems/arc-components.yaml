@@ -20,12 +20,11 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/managed-by: helm
     app.kubernetes.io/version: 0.13.0
-name: gha-runner-scale-set-controller
 spec:
   interval: 5m
-url: oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
-ref:
-  semver: 0.13.0
+  url: oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
+  ref:
+    semver: 0.13.0
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
