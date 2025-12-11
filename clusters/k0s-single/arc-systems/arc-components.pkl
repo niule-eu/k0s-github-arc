@@ -1,0 +1,67 @@
+import "@k8s/api/core/v1/Namespace.pkl"
+import "@k8s/K8sResource.pkl"
+
+hidden arc_operator_version = "0.13.0"
+hidden arc_operator_namespace = "arc-systems"
+hidden arc_operator_labels = new Mapping<String, String> {
+  ["app.kubernetes.io/name"] = "action-runner-controller-operator"
+  ["app.kubernetes.io/part-of"] = "action-runner-controller"
+  ["app.kubernetes.io/component"] = "operator"
+  ["app.kubernetes.io/managed-by"] = "helm"
+  ["app.kubernetes.io/version"] = arc_operator_version
+}
+hidden arc_operator_helm_chart_name = "gha-runner-scale-set-controller"
+
+resources: Listing<K8sResource> = new { 
+  new Namespace {
+    metadata {
+      name = arc_operator_namespace
+      labels = arc_operator_labels
+    }
+  }
+}
+
+arc_operator_helm_repo {
+  apiVersion = "source.toolkit.fluxcd.io/v1"
+  kind = "OCIRepository"
+  metadata {
+    name = arc_operator_helm_chart_name
+    namespace = "flux-system"
+    labels = arc_operator_labels
+  }
+  name = arc_operator_helm_chart_name
+  spec {
+    interval = "5m"
+  }
+  url = "oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller"
+  ref {
+    semver = "0.13.0"
+  }
+}
+
+arc_operator_helm_release {
+  apiVersion = "helm.toolkit.fluxcd.io/v2"
+  kind = "HelmRelease"
+  metadata {
+    name = arc_operator_helm_chart_name
+    namespace = arc_operator_namespace
+    labels = arc_operator_labels
+  }
+  interval = "10m"
+  chartRef {
+    kind = "OCIRepository"
+    name = arc_operator_helm_chart_name
+    namespace = "flux-system"
+  }
+}
+
+output {
+  value = new Listing {
+    ...resources
+    arc_operator_helm_repo
+    arc_operator_helm_release
+  }
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+}
