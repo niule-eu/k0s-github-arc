@@ -1,10 +1,19 @@
 import "@k8s/api/core/v1/ConfigMap.pkl"
+import "@k8s/api/core/v1/Namespace.pkl"
 import "@k8s/K8sResource.pkl"
 
+hidden arc_runner_namespace = "arc-runners"
+
 resources = new Listing {
+  new Namespace {
+    metadata {
+      name = arc_runner_namespace
+    }
+  }
   new ConfigMap {
     metadata {
       name = "gha_hook_job_started"
+      namespace = arc_runner_namespace
     }
     data {
       ["hook_job_started.sh"] =
