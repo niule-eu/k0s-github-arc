@@ -1,0 +1,45 @@
+import "@k8s/api/core/v1/ConfigMap.pkl"
+import "@k8s/K8sResource.pkl"
+
+resources = new Listing {
+  new ConfigMap {
+    metadata {
+      name = "gha_hook_job_started"
+    }
+    data {
+      ["hook_job_started.sh"] =
+        """
+        set -eux
+        echo "hello world"
+        echo $FOO
+        """
+    }
+  }
+}
+
+output {
+  value = resources
+  renderer = (K8sResource.output.renderer as YamlRenderer) {
+    isStream = true
+  }
+  files {
+    ["configs.yaml"] {
+      value = resources
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
+      }
+    }
+    ["kustomization.yaml"] {
+      value = new {
+        apiVersion = "kustomize.config.k8s.io/v1beta1"
+        kind = "Kustomization"
+        resources = new Listing {
+          "configs.yaml"
+        }
+      }
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = false
+      }
+    }
+  }
+}

@@ -1,38 +1,38 @@
 import "@k8s/api/core/v1/Namespace.pkl"
 import "@k8s/K8sResource.pkl"
+import "../controllers/arc.pkl" as arc_controller
 
-hidden arc_controller_version = "0.13.0"
-hidden arc_controller_namespace = "arc-systems"
-hidden arc_controller_labels = new Mapping<String, String> {
-  ["app.kubernetes.io/name"] = "gha-runner-scale-set-controller"
+hidden arc_runner_namespace = "arc-runner"
+hidden arc_runner_labels = new Mapping<String, String> {
+  ["app.kubernetes.io/name"] = "gha-runner-scale-set"
   ["app.kubernetes.io/part-of"] = "action-runner-controller"
-  ["app.kubernetes.io/component"] = "controller"
+  ["app.kubernetes.io/component"] = "scale-set"
   ["app.kubernetes.io/managed-by"] = "helm"
-  ["app.kubernetes.io/version"] = arc_controller_version
+  ["app.kubernetes.io/version"] = arc_controller.arc_controller_version
 }
-hidden arc_runner_helm_chart_url = "oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller"
-hidden arc_controller_helm_chart_name = "gha-runner-scale-set-controller"
+hidden arc_runner_helm_chart_url = "oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set"
+hidden arc_runner_helm_chart_name = "gha-runner-scale-set"
 
 resources: Listing = new { 
   new Namespace {
     metadata {
-      name = arc_controller_namespace
-      labels = arc_controller_labels
+      name = arc_runner_namespace
+      labels = arc_runner_labels
     }
   }
   new {
     apiVersion = "source.toolkit.fluxcd.io/v1"
     kind = "OCIRepository"
     metadata {
-      name = arc_controller_helm_chart_name
+      name = arc_runner_helm_chart_name
       namespace = "flux-system"
-      labels = arc_controller_labels
+      labels = arc_runner_labels
     }
     spec {
       interval = "5m"
-      url = "oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller"
+      url = arc_runner_helm_chart_url
       ref {
-        semver = arc_controller_version
+        semver = arc_controller.arc_controller_version
       }
     }
   }
@@ -40,15 +40,15 @@ resources: Listing = new {
     apiVersion = "helm.toolkit.fluxcd.io/v2"
     kind = "HelmRelease"
     metadata {
-      name = arc_controller_helm_chart_name
-      namespace = arc_controller_namespace
-      labels = arc_controller_labels
+      name = arc_runner_helm_chart_name
+      namespace = arc_runner_namespace
+      labels = arc_runner_labels
     }
     spec {
       interval = "10m"
       chartRef {
         kind = "OCIRepository"
-        name = arc_controller_helm_chart_name
+        name = arc_runner_helm_chart_name
         namespace = "flux-system"
       }
     }
@@ -61,7 +61,7 @@ output {
     isStream = true
   }
   files {
-    ["arc-controller.yaml"] {
+    ["arc-scale-set.yaml"] {
       value = resources
       renderer = (K8sResource.output.renderer as YamlRenderer) {
         isStream = true
@@ -72,7 +72,7 @@ output {
         apiVersion = "kustomize.config.k8s.io/v1beta1"
         kind = "Kustomization"
         resources = new Listing {
-          "arc-controller.yaml"
+          "arc-scale-set.yaml"
         }
       }
       renderer = (K8sResource.output.renderer as YamlRenderer) {
