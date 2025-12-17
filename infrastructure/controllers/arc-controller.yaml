@@ -2,9 +2,9 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    app.kubernetes.io/name: action-runner-controller-operator
+    app.kubernetes.io/name: action-runner-controller-controller
     app.kubernetes.io/part-of: action-runner-controller
-    app.kubernetes.io/component: operator
+    app.kubernetes.io/component: controller
     app.kubernetes.io/managed-by: helm
     app.kubernetes.io/version: 0.13.0
   name: arc-systems
@@ -15,9 +15,9 @@ metadata:
   name: gha-runner-scale-set-controller
   namespace: flux-system
   labels:
-    app.kubernetes.io/name: action-runner-controller-operator
+    app.kubernetes.io/name: action-runner-controller-controller
     app.kubernetes.io/part-of: action-runner-controller
-    app.kubernetes.io/component: operator
+    app.kubernetes.io/component: controller
     app.kubernetes.io/managed-by: helm
     app.kubernetes.io/version: 0.13.0
 spec:
@@ -32,9 +32,9 @@ metadata:
   name: gha-runner-scale-set-controller
   namespace: arc-systems
   labels:
-    app.kubernetes.io/name: action-runner-controller-operator
+    app.kubernetes.io/name: action-runner-controller-controller
     app.kubernetes.io/part-of: action-runner-controller
-    app.kubernetes.io/component: operator
+    app.kubernetes.io/component: controller
     app.kubernetes.io/managed-by: helm
     app.kubernetes.io/version: 0.13.0
 spec:
