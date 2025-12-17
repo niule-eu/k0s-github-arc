@@ -30,3 +30,5 @@ spec:
     name: infrastructure
   path: ./configs
   prune: true
+  decryption:
+    provider: sops

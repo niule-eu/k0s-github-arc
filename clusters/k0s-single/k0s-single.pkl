@@ -73,6 +73,9 @@ infrastructure = new Listing {
       }
       path = "./configs"
       prune = true
+      decryption {
+        provider = "sops"
+      }
       // patches = new Listing {
       //   new {
       //     patch =
