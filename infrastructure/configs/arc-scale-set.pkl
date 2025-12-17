@@ -1,4 +1,5 @@
 import "@k8s/api/core/v1/ConfigMap.pkl"
+import "@k8s/api/core/v1/Secret.pkl"
 import "@k8s/api/core/v1/Namespace.pkl"
 import "@k8s/K8sResource.pkl"
 
@@ -44,6 +45,7 @@ output {
         kind = "Kustomization"
         resources = new Listing {
           "configs.yaml"
+          "secrets.yaml"
         }
       }
       renderer = (K8sResource.output.renderer as YamlRenderer) {
