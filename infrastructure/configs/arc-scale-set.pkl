@@ -12,7 +12,7 @@ resources = new Listing {
   }
   new ConfigMap {
     metadata {
-      name = "gha_hook_job_started"
+      name = "gha-hook-job-started"
       namespace = arc_runner_namespace
     }
     data {

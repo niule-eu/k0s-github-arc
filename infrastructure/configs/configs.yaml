@@ -6,7 +6,7 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: gha_hook_job_started
+  name: gha-hook-job-started
   namespace: arc-runners
 data:
   hook_job_started.sh: |-
