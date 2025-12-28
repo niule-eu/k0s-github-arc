@@ -1,0 +1,69 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: gha-runner-scale-set
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/name: gha-runner-scale-set
+    app.kubernetes.io/part-of: action-runner-controller
+    app.kubernetes.io/component: scale-set
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/version: 0.13.0
+spec:
+  interval: 5m
+  url: oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
+  ref:
+    semver: 0.13.0
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gha-runner-scale-set
+  namespace: arc-runners
+  labels:
+    app.kubernetes.io/name: gha-runner-scale-set
+    app.kubernetes.io/part-of: action-runner-controller
+    app.kubernetes.io/component: scale-set
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/version: 0.13.0
+spec:
+  interval: 10m
+  chartRef:
+    kind: OCIRepository
+    name: gha-runner-scale-set
+    namespace: flux-system
+  values:
+    githubConfigUrl: https://github.com/niule-eu/platform-engineer-interview3
+    githubConfigSecret: arc-github-app-secrets
+    maxRunners: 2
+    minRunners: 1
+    runnerScaleSetName: radxa-x4
+    containerMode:
+      type: kubernetes-novolume
+    template:
+      spec:
+        volumes:
+        - configMap:
+            name: gha-hook-job-started
+          name: gha-hook-job-started
+        containers:
+        - image: ghcr.io/actions/actions-runner:latest
+          env:
+          - name: ACTIONS_RUNNER_HOOK_JOB_STARTED
+            value: /home/runner/hooks/hook_job_started.sh
+          - name: ACTIONS_RUNNER_CONTAINER_HOOKS
+            value: /home/runner/k8s-novolume/index.js
+          - name: ACTIONS_RUNNER_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: ACTIONS_RUNNER_IMAGE
+            value: ghcr.io/actions/actions-runner:latest
+          - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+            value: 'true'
+          command:
+          - /home/runner/run.sh
+          volumeMounts:
+          - mountPath: /home/runner/hooks
+            name: gha-hook-job-started
+          name: runner

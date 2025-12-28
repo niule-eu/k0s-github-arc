@@ -4,6 +4,8 @@ import "@k8s/api/core/v1/Namespace.pkl"
 import "@k8s/K8sResource.pkl"
 
 hidden arc_runner_namespace = "arc-runners"
+hidden arc_runner_secret_name = "arc-github-app-secrets"
+hidden arc_runner_hook_job_configmap_name = "gha-hook-job-started"
 
 resources = new Listing {
   new Namespace {
@@ -13,7 +15,7 @@ resources = new Listing {
   }
   new ConfigMap {
     metadata {
-      name = "gha-hook-job-started"
+      name = arc_runner_hook_job_configmap_name
       namespace = arc_runner_namespace
     }
     data {
@@ -24,7 +26,21 @@ resources = new Listing {
         echo $FOO
         """
     }
-  }
+  } 
+}
+
+secrets = new Listing {
+  new Secret {
+    metadata {
+      name = arc_runner_secret_name
+      namespace = arc_runner_namespace
+    }
+    data {
+      ["github_app_id"] = read("sops:/ARC_APP_github_app_id").text.base64
+      ["github_app_private_key"] = read("sops:/ARC_APP_github_app_private_key").text.base64
+      ["github_app_installation_id"] = read("sops:/ARC_APP_github_app_installation_id").text.base64
+    }
+  } 
 }
 
 output {
@@ -50,6 +66,12 @@ output {
       }
       renderer = (K8sResource.output.renderer as YamlRenderer) {
         isStream = false
+      }
+    }
+    ["secrets.yaml"] {
+      value = secrets
+      renderer = (K8sResource.output.renderer as YamlRenderer) {
+        isStream = true
       }
     }
   }

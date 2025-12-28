@@ -1,8 +1,10 @@
 import "@k8s/api/core/v1/Namespace.pkl"
 import "@k8s/K8sResource.pkl"
-import "../controllers/arc.pkl" as arc_controller
+import "@k8s/api/core/v1/PodSpec.pkl"
 
-hidden arc_runner_namespace = "arc-runner"
+import "../controllers/arc.pkl" as arc_controller
+import "../configs/arc-scale-set.pkl" as arcScaleSet
+
 hidden arc_runner_labels = new Mapping<String, String> {
   ["app.kubernetes.io/name"] = "gha-runner-scale-set"
   ["app.kubernetes.io/part-of"] = "action-runner-controller"
@@ -13,13 +15,72 @@ hidden arc_runner_labels = new Mapping<String, String> {
 hidden arc_runner_helm_chart_url = "oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set"
 hidden arc_runner_helm_chart_name = "gha-runner-scale-set"
 
-resources: Listing = new { 
-  new Namespace {
-    metadata {
-      name = arc_runner_namespace
-      labels = arc_runner_labels
-    }
+local arc_runner_helm_chart_values {
+  githubConfigUrl = "https://github.com/niule-eu/platform-engineer-interview3"
+  githubConfigSecret = arcScaleSet.arc_runner_secret_name
+  maxRunners = 2
+  minRunners = 1
+  runnerScaleSetName = "radxa-x4"
+  containerMode {
+    type = "kubernetes-novolume"
   }
+
+  template {
+    spec = new PodSpec {
+      volumes {
+        new {
+          name = arcScaleSet.arc_runner_hook_job_configmap_name
+          configMap {
+            name = arcScaleSet.arc_runner_hook_job_configmap_name
+          }
+        }
+      }
+      containers {
+        new {
+          name = "runner"
+          image = "ghcr.io/actions/actions-runner:latest"
+          command {
+            "/home/runner/run.sh"
+          }
+          volumeMounts {
+            new {
+              name = arcScaleSet.arc_runner_hook_job_configmap_name
+              mountPath = "/home/runner/hooks"
+            }
+          }
+          env {
+            new {
+              name = "ACTIONS_RUNNER_HOOK_JOB_STARTED"
+              value = "/home/runner/hooks/hook_job_started.sh"
+            }
+            new {
+              name = "ACTIONS_RUNNER_CONTAINER_HOOKS"
+              value = "/home/runner/k8s-novolume/index.js"
+            }
+            new {
+              name = "ACTIONS_RUNNER_POD_NAME"
+              valueFrom {
+                fieldRef {
+                  fieldPath = "metadata.name"
+                }
+              }
+            }
+            new {
+              name = "ACTIONS_RUNNER_IMAGE"
+              value = "ghcr.io/actions/actions-runner:latest"
+            }
+            new {
+              name = "ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER"
+              value = "true"
+            }
+          }
+        }
+      }
+    }
+  }  
+}
+
+resources: Listing = new {
   new {
     apiVersion = "source.toolkit.fluxcd.io/v1"
     kind = "OCIRepository"
@@ -41,7 +102,7 @@ resources: Listing = new {
     kind = "HelmRelease"
     metadata {
       name = arc_runner_helm_chart_name
-      namespace = arc_runner_namespace
+      namespace = arcScaleSet.arc_runner_namespace
       labels = arc_runner_labels
     }
     spec {
@@ -51,6 +112,7 @@ resources: Listing = new {
         name = arc_runner_helm_chart_name
         namespace = "flux-system"
       }
+      values = arc_runner_helm_chart_values
     }
   }
 }
