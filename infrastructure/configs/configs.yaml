@@ -14,4 +14,4 @@ data:
     echo "hello world"
     pwd
     ls -la
-    echo $FOO
+    git status
