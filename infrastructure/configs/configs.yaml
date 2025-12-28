@@ -14,3 +14,4 @@ data:
     echo "hello world"
     pwd
     ls -la
+    set
