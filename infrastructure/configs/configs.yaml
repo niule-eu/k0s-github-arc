@@ -12,4 +12,6 @@ data:
   hook_job_started.sh: |-
     set -eux
     echo "hello world"
+    pwd
+    ls -la
     echo $FOO

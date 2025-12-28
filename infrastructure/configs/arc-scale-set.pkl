@@ -23,6 +23,8 @@ resources = new Listing {
         """
         set -eux
         echo "hello world"
+        pwd
+        ls -la
         echo $FOO
         """
     }
