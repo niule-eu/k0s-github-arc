@@ -14,16 +14,16 @@ resources: Listing = new {
   }
   new {
     apiVersion = "source.toolkit.fluxcd.io/v1"
-    kind = "OCIRepository"
+    kind = "GitRepository"
     metadata {
       name = lpp_helm_chart_name
       namespace = "flux-system"
     }
     spec {
-      interval = "5m"
-      url = lpp_helm_chart_url
+      interval = "10m"
+      url = "https://github.com/rancher/local-path-provisioner.git"
       ref {
-        semver = lpp_helm_chart_version
+        tag = "v0.0.33"
       }
     }
   }
@@ -36,10 +36,16 @@ resources: Listing = new {
     }
     spec {
       interval = "10m"
-      chartRef {
-        kind = "OCIRepository"
-        name = lpp_helm_chart_name
-        namespace = "flux-system"
+      chart {
+        spec {
+          chart = "./deploy/chart/local-path-provisioner"
+          sourceRef {
+            kind = "GitRepository"
+            name = lpp_helm_chart_name
+            namespace = "flux-system"
+          }
+          interval = "10m"
+        }
       }
       values {
         storageClass {
