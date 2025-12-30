@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: local-path-provisioner
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: local-path-provisioner
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: oci://dp.apps.rancher.io/charts/local-path-provisioner
+  ref:
+    semver: 0.0.33
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: local-path-provisioner
+  namespace: local-path-provisioner
+spec:
+  interval: 10m
+  chartRef:
+    kind: OCIRepository
+    name: local-path-provisioner
+    namespace: flux-system
+  values:
+    storageClass:
+      defaultClass: true
