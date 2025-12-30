@@ -22,7 +22,7 @@ local arc_runner_helm_chart_values {
   minRunners = 1
   runnerScaleSetName = "radxa-x4"
   containerMode {
-    type = "kubernetes-novolume"
+    type = "kubernetes"
   }
 
   template {
@@ -32,6 +32,24 @@ local arc_runner_helm_chart_values {
           name = arcScaleSet.arc_runner_hook_job_configmap_name
           configMap {
             name = arcScaleSet.arc_runner_hook_job_configmap_name
+          }
+        }
+        new {
+          name = "work"
+          ephemeral {
+            volumeClaimTemplate {
+              spec {
+                accessModes {
+                  "ReadWriteOnce"
+                }
+                storageClassName = "local-path"
+                resources {
+                  requests {
+                    ["storage"] = "1Gi"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -47,8 +65,30 @@ local arc_runner_helm_chart_values {
               name = arcScaleSet.arc_runner_hook_job_configmap_name
               mountPath = "/home/runner/hooks"
             }
+            new {
+              name = "work"
+              mountPath = "/home/runner/_work"
+            }
           }
           env {
+            new {
+              name = "ARC_APP_CLIENT_ID"
+              valueFrom {
+                secretKeyRef {
+                  name = arcScaleSet.arc_runner_secret_name
+                  key = "github_app_client_id"
+                }
+              }
+            }
+            new {
+              name = "ARC_APP_PRIVATE_KEY"
+              valueFrom {
+                secretKeyRef {
+                  name = arcScaleSet.arc_runner_secret_name
+                  key = "github_app_private_key"
+                }
+              }
+            }
             new {
               name = "ACTIONS_RUNNER_HOOK_JOB_STARTED"
               value = "/home/runner/hooks/hook_job_started.sh"
@@ -64,10 +104,6 @@ local arc_runner_helm_chart_values {
                   fieldPath = "metadata.name"
                 }
               }
-            }
-            new {
-              name = "ACTIONS_RUNNER_IMAGE"
-              value = "ghcr.io/actions/actions-runner:latest"
             }
             new {
               name = "ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER"

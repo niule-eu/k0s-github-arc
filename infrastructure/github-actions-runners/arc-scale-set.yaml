@@ -39,16 +39,36 @@ spec:
     minRunners: 1
     runnerScaleSetName: radxa-x4
     containerMode:
-      type: kubernetes-novolume
+      type: kubernetes
     template:
       spec:
         volumes:
         - configMap:
             name: gha-hook-job-started
           name: gha-hook-job-started
+        - ephemeral:
+            volumeClaimTemplate:
+              spec:
+                storageClassName: local-path
+                resources:
+                  requests:
+                    storage: 1Gi
+                accessModes:
+                - ReadWriteOnce
+          name: work
         containers:
         - image: ghcr.io/actions/actions-runner:latest
           env:
+          - name: ARC_APP_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: arc-github-app-secrets
+                key: github_app_client_id
+          - name: ARC_APP_PRIVATE_KEY
+            valueFrom:
+              secretKeyRef:
+                name: arc-github-app-secrets
+                key: github_app_private_key
           - name: ACTIONS_RUNNER_HOOK_JOB_STARTED
             value: /home/runner/hooks/hook_job_started.sh
           - name: ACTIONS_RUNNER_CONTAINER_HOOKS
@@ -57,8 +77,6 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          - name: ACTIONS_RUNNER_IMAGE
-            value: ghcr.io/actions/actions-runner:latest
           - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
             value: 'true'
           command:
@@ -66,4 +84,6 @@ spec:
           volumeMounts:
           - mountPath: /home/runner/hooks
             name: gha-hook-job-started
+          - mountPath: /home/runner/_work
+            name: work
           name: runner

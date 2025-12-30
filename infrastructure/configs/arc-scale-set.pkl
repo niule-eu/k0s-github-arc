@@ -1,6 +1,6 @@
 import "@k8s/api/core/v1/ConfigMap.pkl"
-import "@k8s/api/core/v1/Secret.pkl"
 import "@k8s/api/core/v1/Namespace.pkl"
+import "@k8s/api/core/v1/Secret.pkl"
 import "@k8s/K8sResource.pkl"
 
 hidden arc_runner_namespace = "arc-runners"
@@ -19,16 +19,39 @@ resources = new Listing {
       namespace = arc_runner_namespace
     }
     data {
+      ["allowed_signers"] =
+        let (
+          niu_pub_key =
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC9AaghNePDNxI//W6OX6Yp6gssMpDUzK+4XoUiXnRZE fedora-sway-atomic@niuleh.eu"
+        )
+          """
+          niule@to.nils.hansen@gmail.com namespaces="git" \(niu_pub_key)
+          niule@niu@niule.xyz namespaces="git" \(niu_pub_key)
+          niu@niu@niule.xyz namespaces="git" \(niu_pub_key)
+
+          """
+      ["allowed_authors"] =
+        let (renderer = new JsonRenderer {})
+          renderer.renderValue(new Listing {
+            new {
+              name = "niule"
+              email = "147980769+niule-eu@users.noreply.github.com"
+            }
+            new {
+              name = "niule"
+              email = "niule@niu@niule.xyz"
+            }
+            new {
+              name = "niu"
+              email = "niu@niu@niule.xyz"
+            }
+          })
       ["hook_job_started.sh"] =
-        """
-        set -eux
-        echo "hello world"
-        pwd
-        ls -la
-        echo $FOO
-        """
+        read("./hook_job_started.sh").text
+          .replaceFirst(Regex("client_id=.*" ), "client_id=\"\\$ARC_APP_CLIENT_ID\"")
+          .replaceFirst(Regex("pem=.*" ), "pem=\"\\$ARC_APP_PRIVATE_KEY\"")
     }
-  } 
+  }
 }
 
 secrets = new Listing {
@@ -39,10 +62,11 @@ secrets = new Listing {
     }
     data {
       ["github_app_id"] = read("sops:/ARC_APP_github_app_id").text.base64
+      ["github_app_client_id"] = read("sops:/ARC_APP_github_client_id").text.base64
       ["github_app_private_key"] = read("sops:/ARC_APP_github_app_private_key").text.base64
       ["github_app_installation_id"] = read("sops:/ARC_APP_github_app_installation_id").text.base64
     }
-  } 
+  }
 }
 
 output {

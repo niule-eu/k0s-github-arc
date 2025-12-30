@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+set -eu
+
+client_id=$1 # Client ID as first argument
+
+pem=$( cat $2 ) # file path of the private key as second argument
+
+now=$(date +%s)
+iat=$((${now} - 60)) # Issues 60 seconds in the past
+exp=$((${now} + 60)) # Expires 60 seconds in the future
+
+b64enc() { openssl base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n'; }
+
+header_json='{
+    "typ":"JWT",
+    "alg":"RS256"
+}'
+# Header encode
+header=$( echo -n "${header_json}" | b64enc )
+
+payload_json="{
+    \"iat\":${iat},
+    \"exp\":${exp},
+    \"iss\":\"${client_id}\"
+}"
+# Payload encode
+payload=$( echo -n "${payload_json}" | b64enc )
+
+# Signature
+header_payload="${header}"."${payload}"
+signature=$(
+    openssl dgst -sha256 -sign <(echo -n "${pem}") \
+    <(echo -n "${header_payload}") | b64enc
+)
+
+# Create JWT
+JWT="${header_payload}"."${signature}"
+
+app=$(
+curl --request GET \
+--url "https://api.github.com/repos/niule-eu/platform-engineer-interview3/installation" \
+--header "Accept: application/vnd.github+json" \
+--header "Authorization: Bearer $JWT" \
+--header "X-GitHub-Api-Version: 2022-11-28" 
+)
+app_id=`echo "$app" | jq -j '.app_id'`
+installation_id=`echo "$app" | jq -j '.id'`
+
+access_token=$(
+curl --request POST \
+--url "https://api.github.com/app/installations/$installation_id/access_tokens" \
+--header "Accept: application/vnd.github+json" \
+--header "Authorization: Bearer $JWT" \
+--header "X-GitHub-Api-Version: 2022-11-28"
+)
+
+token=`echo "$access_token" | jq -j '.token'`
+
+commit=$(
+curl --request GET \
+--url "https://api.github.com/repos/niule-eu/platform-engineer-interview3/commits" \
+--header "Accept: application/vnd.github+json" \
+--header "Authorization: Bearer $token" \
+--header "X-GitHub-Api-Version: 2022-11-28" | jq -j '.[0].commit'
+)
+
+namespace=git
+script=$(readlink -f "$0")
+script_dir=$(dirname "$script")
+allowed_signers="$script_dir/allowed_signers"
+identity=$(echo "$commit" | jq -j '.committer.name')@$(echo "$commit" | jq -j '.committer.email')
+message=$(echo "$commit" | jq -j '.verification.payload')
+message_sig="$(mktemp)"
+
+echo "$commit" | jq -j '.verification.signature'  > "$message_sig"
+
+echo "$message"  | ssh-keygen -Y verify -n "$namespace" -s "$message_sig" -f "$allowed_signers" -I "$identity"
